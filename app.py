@@ -15,7 +15,7 @@ from forms import *
 from sqlalchemy.orm import backref
 from sqlalchemy.sql.functions import concat
 from flask_migrate import Migrate
-# from models import showTable, Venue, Artist
+from models import db, showTable, Venue, Artist
 from flask import g
 #----------------------------------------------------------------------------#
 # App Config.
@@ -24,7 +24,8 @@ from flask import g
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
-db = SQLAlchemy(app)
+# db = SQLAlchemy(app)
+db.init_app(app)
 
 # TODO: connect to a local postgresql database
 migrate = Migrate(app, db)
@@ -32,55 +33,6 @@ migrate = Migrate(app, db)
 # SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:123456@localhost:5432/fyyur_legit2'
 SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:123456@localhost:5432/fyyur'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
-
-showTable = db.Table('shows',
-db.Column('artist_id', db.Integer, db.ForeignKey('artists.id'), primary_key=True),
-db.Column('venue_id', db.Integer, db.ForeignKey('venues.id'), primary_key=True),
-db.Column('start_time',db.String(120), primary_key=True)
-)
-
-class Venue(db.Model):
-    __tablename__ = 'venues'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    website = db.Column(db.String(120))
-    seeking_talent = db.Column(db.Boolean, default=True)
-    seeking_description = db.Column(db.String(500), default="We are on the lookout for a local artist")
-    # relationShip Part
-    artists = db.relationship("Artist", secondary=showTable, backref=db.backref('venues', lazy=True))
-
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-class Artist(db.Model):
-    __tablename__ = 'artists'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    website = db.Column(db.String(120))
-    seeking_venue = db.Column(db.Boolean, default=True)
-    seeking_description = db.Column(db.String(500), default="Looking for shows to perform")
-
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
 #----------------------------------------------------------------------------#
 # Filters.

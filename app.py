@@ -15,7 +15,8 @@ from forms import *
 from sqlalchemy.orm import backref
 from sqlalchemy.sql.functions import concat
 from flask_migrate import Migrate
-from models import showTable, Venue, Artist
+# from models import showTable, Venue, Artist
+from flask import g
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -27,10 +28,59 @@ db = SQLAlchemy(app)
 
 # TODO: connect to a local postgresql database
 migrate = Migrate(app, db)
+# SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:123456@localhost:5432/fyyur_legit'
+# SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:123456@localhost:5432/fyyur_legit2'
 SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:123456@localhost:5432/fyyur'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+#----------------------------------------------------------------------------#
+# Models.
+#----------------------------------------------------------------------------#
 
+showTable = db.Table('shows',
+db.Column('artist_id', db.Integer, db.ForeignKey('artists.id'), primary_key=True),
+db.Column('venue_id', db.Integer, db.ForeignKey('venues.id'), primary_key=True),
+db.Column('start_time',db.String(120), primary_key=True)
+)
+
+class Venue(db.Model):
+    __tablename__ = 'venues'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    city = db.Column(db.String(120))
+    state = db.Column(db.String(120))
+    address = db.Column(db.String(120))
+    phone = db.Column(db.String(120))
+    genres = db.Column(db.String(120))
+    image_link = db.Column(db.String(500))
+    facebook_link = db.Column(db.String(120))
+    website = db.Column(db.String(120))
+    seeking_talent = db.Column(db.Boolean, default=True)
+    seeking_description = db.Column(db.String(500), default="We are on the lookout for a local artist")
+    # relationShip Part
+    artists = db.relationship("Artist", secondary=showTable, backref=db.backref('venues', lazy=True))
+
+    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+
+class Artist(db.Model):
+    __tablename__ = 'artists'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    city = db.Column(db.String(120))
+    state = db.Column(db.String(120))
+    phone = db.Column(db.String(120))
+    genres = db.Column(db.String(120))
+    image_link = db.Column(db.String(500))
+    facebook_link = db.Column(db.String(120))
+    website = db.Column(db.String(120))
+    seeking_venue = db.Column(db.Boolean, default=True)
+    seeking_description = db.Column(db.String(500), default="Looking for shows to perform")
+
+    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+
+# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -201,10 +251,7 @@ def create_venue_submission():
             phone=request.form['phone'],
             genres=request.form.getlist('genres'),
             facebook_link=request.form['facebook_link'],
-            image_link=request.form['image_link'],
-            # website=request.form['website'],
-            # seeking_talent=request.form['seeking_talent'],
-            # seeking_description=request.form['seeking_description']
+            image_link=request.form['image_link']
         )
         # Add the Venue Object to the db session
         db.session.add(venue)
@@ -557,6 +604,10 @@ def create_show_submission():
   # e.g., flash('An error occurred. Show could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
     return render_template('pages/home.html')
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
 
 @app.errorhandler(404)
 def not_found_error(error):
